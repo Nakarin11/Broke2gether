@@ -133,13 +133,13 @@ input:focus {
 
 .qr-container img.logo {
     position: absolute;
-    width: 20%;
-    max-width: 60px;
-    max-height: 60px;
-    height: auto;
     top: 50%;
     left: 50%;
+    width: 25%;
+    max-width: 60px;
+    height: auto;
     transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
 #qrImageBox {
