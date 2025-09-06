@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broke2gether</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="card">
+    <h1>Broke2gether</h1>
+    <h2>จ่ายด้วยรัก หารด้วยน้ำตา</h2>
+    <input type="text" id="totalAmount" placeholder="จำนวนเงิน" autocomplete="off">
+    <input type="text" id="numPeople" placeholder="จำนวนคน" autocomplete="off">
+    <div id="errorMsg"></div>
+
+    <div id="qrImageBox">
+        <img src="qrcode.png" alt="QR Code" style="width:200px; height:200px; border-radius:10px;">
+    </div>
+    <button id="showQRBtn">แสดง QR Code</button>
+
+    <div class="display-box" id="displayBox">
+        <img src="banner.png" class="banner" alt="Banner">
+        <div class="qr-container">
+            <img id="qrcode" class="qr" src="" alt="QR Code">
+            <img src="promptpay-logo.png" class="logo" alt="Logo">
+        </div>
+    </div>
+
+    <p id="perPersonBox" style="display:none;">
+        หารตกคนละ <span id="amount"></span> บาท
+        <br><sub id="extraInfo"></sub>
+    </p>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js" crossorigin="anonymous"></script>
+<script>
+$("#showQRBtn").on("click", function() {
+    const box = $("#qrImageBox");
+
+    if(box.hasClass("show")){
+        box.removeClass("show");
+        $(this).text("แสดง QR Code");
+    } else {
+        box.addClass("show");
+        $(this).text("ซ่อน QR Code");
+    }
+});
+
+function showError(msg){
+    $("#errorMsg").text(msg).fadeIn();
+}
+
+function genQR() {
+    const totalAmountRaw = $("#totalAmount").val().trim();
+    const numPeopleRaw = $("#numPeople").val().trim();
+
+    const totalAmount = parseFloat(totalAmountRaw);
+    const numPeople = parseInt(numPeopleRaw);
+
+    if (!totalAmountRaw || !numPeopleRaw || isNaN(totalAmount) || isNaN(numPeople) || totalAmount <= 0 || numPeople <= 0) {
+        $("#displayBox").hide();
+        $("#perPersonBox").hide();
+        showError("ข้อมูลต้องเป็นตัวเลขมากกว่า 0");
+        return;
+    }
+
+    $("#errorMsg").fadeOut(1000);
+
+    const perPerson = (totalAmount / numPeople).toFixed(2);
+
+    $.ajax({
+        method: 'post',
+        url: 'https://broke2gether.onrender.com/generateQR',
+        data: { amount: parseFloat(perPerson) },
+        success: function(response) {
+            $("#qrcode").attr('src', response.Result);
+            $("#displayBox").fadeIn();
+
+            $("#amount").text(perPerson);
+            $("#extraInfo").text(`จำนวน ${numPeople} คน | รวมทั้งหมด ${totalAmount.toFixed(2)} บาท`);
+            $("#perPersonBox").fadeIn();
+        },
+        error: function(error) {
+            console.log('Fail', error);
+            $("#displayBox").hide();
+            $("#perPersonBox").hide();
+        }
+    });
+}
+
+$("#totalAmount").on("input", function(){
+    let val = $(this).val();
+    if(/[^0-9.]/.test(val)){
+        showError("กรอกตัวเลขเท่านั้น!!!");
+    }
+    val = val.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if(parts.length > 2){
+        val = parts[0] + '.' + parts.slice(1).join('');
+    }
+    $(this).val(val);
+    if($("#totalAmount").val() && $("#numPeople").val()) genQR();
+});
+$("#numPeople").on("input", function(){
+    let val = $(this).val();
+    if(/[^0-9]/.test(val)){
+        showError("กรอกตัวเลขเท่านั้น!!!");
+    }
+    val = val.replace(/[^0-9]/g, '');
+    $(this).val(val);
+    if($("#totalAmount").val() && $("#numPeople").val()) genQR();
+});
+
+$("#totalAmount, #numPeople").on("focus", function(){
+    $(this).val('');
+    $("#errorMsg").fadeOut(1000);
+    $("#displayBox").hide();
+    $("#perPersonBox").hide();
+});
+</script>
+</body>
+</html>
